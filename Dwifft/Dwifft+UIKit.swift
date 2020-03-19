@@ -53,6 +53,8 @@ public final class CollectionViewDiffCalculator<Section: Equatable, Value: Equat
 
     /// The collection view to be managed.
     public weak var collectionView: UICollectionView?
+    
+    public var animatedUpdatesEnabled: Bool = true
 
     /// Initializes a new diff calculator.
     ///
@@ -66,17 +68,23 @@ public final class CollectionViewDiffCalculator<Section: Equatable, Value: Equat
 
     override internal func processChanges(newState: SectionedValues<Section, Value>, diff: [SectionedDiffStep<Section, Value>]) {
         guard let collectionView = self.collectionView else { return }
-        collectionView.performBatchUpdates({
-            self._sectionedValues = newState
-            for result in diff {
-                switch result {
-                case let .delete(section, row, _): collectionView.deleteItems(at: [IndexPath(row: row, section: section)])
-                case let .insert(section, row, _): collectionView.insertItems(at: [IndexPath(row: row, section: section)])
-                case let .sectionDelete(section, _): collectionView.deleteSections(IndexSet(integer: section))
-                case let .sectionInsert(section, _): collectionView.insertSections(IndexSet(integer: section))
+        
+        if animatedUpdatesEnabled {
+            collectionView.performBatchUpdates({
+                self._sectionedValues = newState
+                for result in diff {
+                    switch result {
+                    case let .delete(section, row, _): collectionView.deleteItems(at: [IndexPath(row: row, section: section)])
+                    case let .insert(section, row, _): collectionView.insertItems(at: [IndexPath(row: row, section: section)])
+                    case let .sectionDelete(section, _): collectionView.deleteSections(IndexSet(integer: section))
+                    case let .sectionInsert(section, _): collectionView.insertSections(IndexSet(integer: section))
+                    }
                 }
-            }
-        }, completion: nil)
+            }, completion: nil)
+        } else {
+            self._sectionedValues = newState
+            collectionView.reloadData()
+        }
     }
 }
 
